@@ -1,49 +1,49 @@
-# SekizOS - Windows Agent Tool
+# Windows Agent Tool
 
-Windows üzerinde Claude Code'un tam kontrolünü sağlayan agent sistemi.
+A Windows control agent system that enables Claude Code to fully control Windows from WSL.
 
-## 🚀 Özellikler
+## 🚀 Features
 
-- 📸 Ekran görüntüsü alma
-- 🖱️ Mouse kontrolü (hareket, tıklama)
-- ⌨️ Klavye kontrolü (metin yazma, tuş kombinasyonları)
-- 💻 PowerShell komut çalıştırma
-- 📊 Process yönetimi
-- 📁 Dosya işlemleri
-- 🔄 WSL-Windows entegrasyonu
+- 📸 Screenshot capture
+- 🖱️ Mouse control (movement, clicks)
+- ⌨️ Keyboard control (text input, key combinations)
+- 💻 PowerShell command execution
+- 📊 Process management
+- 📁 File operations
+- 🔄 WSL-Windows integration
 
-## 📦 Kurulum
+## 📦 Installation
 
-### Windows'da:
-1. `windows-agent-tool` klasörünü Windows'a kopyala
-2. `install.bat` dosyasını **yönetici olarak** çalıştır
-3. Agent otomatik başlayacak
+### On Windows:
+1. Copy the `windows-agent-tool/windows-installer` folder to Windows
+2. Run `install.bat` as **administrator**
+3. The agent will start automatically
 
-### WSL'de:
+### On WSL:
 ```bash
-# Tool'u kur
+# Install the tool
 cp windows-agent-tool/win ~/.local/bin/
 chmod +x ~/.local/bin/win
 
-# Alias'ları ekle
+# Add aliases
 cat windows-agent-tool/windows_aliases.sh >> ~/.windows_aliases
 echo "source ~/.windows_aliases" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-## 🎯 Kullanım
+## 🎯 Usage
 
-### Komut Satırı:
+### Command Line:
 ```bash
 # Screenshot
 win screenshot
 win screenshot desktop.png
 
-# Mouse kontrolü
+# Mouse control
 win click 500 300
 win move 100 200
 
-# Klavye
+# Keyboard
 win type "Hello World"
 win key enter
 win key ctrl+c
@@ -52,12 +52,12 @@ win key ctrl+c
 win ps "Get-Date"
 win ps "dir C:\\"
 
-# Process yönetimi
+# Process management
 win processes
 win kill 1234
 ```
 
-### Python'da:
+### Python:
 ```python
 from windows_control import WindowsControl
 
@@ -68,37 +68,37 @@ win.type("Test")
 win.powershell("notepad")
 ```
 
-## 🔧 Claude Code Entegrasyonu
+## 🔧 Claude Code Integration
 
-Projenizde `CLAUDE.md` oluşturun:
+Create a `CLAUDE.md` in your project:
 ```markdown
 ## Windows Agent Tool
-- `win screenshot` - Ekran görüntüsü al
-- `win click <x> <y>` - Tıkla
-- `win type "text"` - Yaz
-- `win ps "command"` - PowerShell
+- `win screenshot` - Take screenshot
+- `win click <x> <y>` - Click at coordinates
+- `win type "text"` - Type text
+- `win ps "command"` - Run PowerShell
 ```
 
-## 📁 Dosya Yapısı
+## 📁 File Structure
 
 ```
 windows-agent-tool/
-├── windows_agent.py      # Ana agent (Flask server)
-├── windows_control.py    # Python kontrol kütüphanesi
-├── win                   # CLI komutu
-├── install.bat          # Windows kurulum
-├── uninstall.bat        # Kaldırma
-├── requirements.txt     # Python bağımlılıkları
-└── README.md           # Detaylı dokümantasyon
+├── windows-installer/    # Windows installation files
+│   ├── windows_agent.py  # Main agent (Flask server)
+│   ├── install.bat      # Installation script
+│   └── ...
+├── windows_control.py   # Python control library
+├── win                  # CLI command
+└── windows_aliases.sh   # Bash aliases
 ```
 
-## 🛡️ Güvenlik
+## 🛡️ Security
 
-- Sadece localhost ve WSL subnet'lerinden erişim
+- Only accessible from localhost and WSL subnets
 - Bearer token authentication
 - Port: 8765
 
-## 📝 Lisans
+## 📝 License
 
 MIT License
 

@@ -1,0 +1,17 @@
+WINDOWS AGENT INSTALLATION INSTRUCTIONS
+======================================
+
+1. Copy this folder (windows-installer) to Windows
+   Example: C:\Users\[Username]\WindowsAgent
+
+2. Right-click on install.bat
+
+3. Select "Run as administrator"
+
+4. The agent will start automatically when installation is complete
+
+5. For testing: Run start_agent_visible.bat
+
+NOTE: Python 3.8+ must be installed!
+
+To uninstall: Run uninstall.bat (as administrator)
