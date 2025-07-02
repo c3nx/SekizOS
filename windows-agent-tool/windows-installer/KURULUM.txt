@@ -1,0 +1,17 @@
+WINDOWS AGENT KURULUM TALİMATLARI
+=================================
+
+1. Bu klasörü (windows-installer) Windows'a kopyalayın
+   Örnek: C:\Users\[KullanıcıAdı]\WindowsAgent
+
+2. install.bat dosyasına sağ tıklayın
+
+3. "Yönetici olarak çalıştır" seçeneğini seçin
+
+4. Kurulum tamamlandığında agent otomatik başlayacak
+
+5. Test için: start_agent_visible.bat çalıştırın
+
+NOT: Python 3.8+ yüklü olmalıdır!
+
+Kaldırmak için: uninstall.bat (yönetici olarak)

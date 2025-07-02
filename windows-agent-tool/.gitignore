@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+
+# Windows Agent
+.claude_agent_info
+*.screenshot.png
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Temp files
+*.tmp
+*.temp
+*~
