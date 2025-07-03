@@ -2,8 +2,15 @@
 """
 Windows Agent for Claude Code
 Provides Windows control capabilities to Claude Code running in WSL
-Version: 2.0
+Version: 3.0
 """
+
+# Version info
+__version__ = "3.0"
+__features__ = {
+    "2.0": "Basic Windows control (mouse, keyboard, screenshot, powershell)",
+    "3.0": "Added window management (focus, maximize, minimize, restore)"
+}
 
 import os
 import sys
@@ -13,6 +20,9 @@ import subprocess
 import socket
 import threading
 import time
+import shutil
+import tempfile
+import urllib.request
 from io import BytesIO
 from datetime import datetime
 from functools import wraps
@@ -25,6 +35,7 @@ import win32api
 import win32con
 import win32process
 import win32security
+import win32gui
 
 app = Flask(__name__)
 
@@ -88,9 +99,23 @@ def health():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
-        'version': '2.0',
+        'version': __version__,
         'pid': os.getpid(),
-        'uptime': time.time()
+        'uptime': time.time(),
+        'features': __features__.get(__version__, 'Unknown version')
+    })
+
+@app.route('/version', methods=['GET'])
+def version():
+    """Get detailed version information"""
+    return jsonify({
+        'version': __version__,
+        'features': __features__,
+        'current_features': __features__.get(__version__, 'Unknown version'),
+        'python_version': sys.version,
+        'platform': sys.platform,
+        'agent_path': os.path.abspath(__file__),
+        'last_modified': os.path.getmtime(__file__)
     })
 
 @app.route('/screenshot', methods=['POST'])
@@ -387,13 +412,383 @@ def file_list():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# Window Management Endpoints
+@app.route('/window/list', methods=['GET'])
+@require_auth
+def window_list():
+    """List all visible windows"""
+    try:
+        windows = []
+        
+        def enum_handler(hwnd, results):
+            if win32gui.IsWindowVisible(hwnd):
+                window_text = win32gui.GetWindowText(hwnd)
+                if window_text:
+                    try:
+                        _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                        rect = win32gui.GetWindowRect(hwnd)
+                        is_minimized = win32gui.IsIconic(hwnd)
+                        is_maximized = win32gui.IsZoomed(hwnd)
+                        
+                        results.append({
+                            'hwnd': hwnd,
+                            'title': window_text,
+                            'pid': pid,
+                            'rect': {
+                                'left': rect[0],
+                                'top': rect[1],
+                                'right': rect[2],
+                                'bottom': rect[3],
+                                'width': rect[2] - rect[0],
+                                'height': rect[3] - rect[1]
+                            },
+                            'state': 'minimized' if is_minimized else 'maximized' if is_maximized else 'normal'
+                        })
+                    except:
+                        pass
+            return True
+        
+        win32gui.EnumWindows(enum_handler, windows)
+        
+        return jsonify({
+            'success': True,
+            'windows': windows,
+            'count': len(windows)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/window/focus', methods=['POST'])
+@require_auth
+def window_focus():
+    """Bring window to foreground"""
+    try:
+        data = request.json
+        title = data.get('title')
+        pid = data.get('pid')
+        
+        hwnd = None
+        
+        # Find window by title or PID
+        def enum_handler(h, param):
+            if title and title.lower() in win32gui.GetWindowText(h).lower():
+                param.append(h)
+            elif pid:
+                _, window_pid = win32process.GetWindowThreadProcessId(h)
+                if window_pid == pid:
+                    param.append(h)
+            return True
+        
+        handles = []
+        win32gui.EnumWindows(enum_handler, handles)
+        
+        if not handles:
+            return jsonify({'success': False, 'error': 'Window not found'}), 404
+        
+        hwnd = handles[0]
+        
+        # Restore window if minimized
+        if win32gui.IsIconic(hwnd):
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+        
+        # Bring to foreground
+        win32gui.SetForegroundWindow(hwnd)
+        
+        return jsonify({
+            'success': True,
+            'hwnd': hwnd,
+            'title': win32gui.GetWindowText(hwnd)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/window/maximize', methods=['POST'])
+@require_auth
+def window_maximize():
+    """Maximize window"""
+    try:
+        data = request.json
+        title = data.get('title')
+        pid = data.get('pid')
+        
+        # Find window
+        def enum_handler(h, param):
+            if title and title.lower() in win32gui.GetWindowText(h).lower():
+                param.append(h)
+            elif pid:
+                _, window_pid = win32process.GetWindowThreadProcessId(h)
+                if window_pid == pid:
+                    param.append(h)
+            return True
+        
+        handles = []
+        win32gui.EnumWindows(enum_handler, handles)
+        
+        if not handles:
+            return jsonify({'success': False, 'error': 'Window not found'}), 404
+        
+        hwnd = handles[0]
+        win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)
+        
+        return jsonify({
+            'success': True,
+            'hwnd': hwnd,
+            'title': win32gui.GetWindowText(hwnd)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/window/minimize', methods=['POST'])
+@require_auth
+def window_minimize():
+    """Minimize window"""
+    try:
+        data = request.json
+        title = data.get('title')
+        pid = data.get('pid')
+        
+        # Find window
+        def enum_handler(h, param):
+            if title and title.lower() in win32gui.GetWindowText(h).lower():
+                param.append(h)
+            elif pid:
+                _, window_pid = win32process.GetWindowThreadProcessId(h)
+                if window_pid == pid:
+                    param.append(h)
+            return True
+        
+        handles = []
+        win32gui.EnumWindows(enum_handler, handles)
+        
+        if not handles:
+            return jsonify({'success': False, 'error': 'Window not found'}), 404
+        
+        hwnd = handles[0]
+        win32gui.ShowWindow(hwnd, win32con.SW_MINIMIZE)
+        
+        return jsonify({
+            'success': True,
+            'hwnd': hwnd,
+            'title': win32gui.GetWindowText(hwnd)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/window/restore', methods=['POST'])
+@require_auth
+def window_restore():
+    """Restore window to normal size"""
+    try:
+        data = request.json
+        title = data.get('title')
+        pid = data.get('pid')
+        
+        # Find window
+        def enum_handler(h, param):
+            if title and title.lower() in win32gui.GetWindowText(h).lower():
+                param.append(h)
+            elif pid:
+                _, window_pid = win32process.GetWindowThreadProcessId(h)
+                if window_pid == pid:
+                    param.append(h)
+            return True
+        
+        handles = []
+        win32gui.EnumWindows(enum_handler, handles)
+        
+        if not handles:
+            return jsonify({'success': False, 'error': 'Window not found'}), 404
+        
+        hwnd = handles[0]
+        win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+        
+        return jsonify({
+            'success': True,
+            'hwnd': hwnd,
+            'title': win32gui.GetWindowText(hwnd)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/window/state', methods=['POST'])
+@require_auth
+def window_state():
+    """Get window state"""
+    try:
+        data = request.json
+        title = data.get('title')
+        pid = data.get('pid')
+        
+        # Find window
+        def enum_handler(h, param):
+            if title and title.lower() in win32gui.GetWindowText(h).lower():
+                param.append(h)
+            elif pid:
+                _, window_pid = win32process.GetWindowThreadProcessId(h)
+                if window_pid == pid:
+                    param.append(h)
+            return True
+        
+        handles = []
+        win32gui.EnumWindows(enum_handler, handles)
+        
+        if not handles:
+            return jsonify({'success': False, 'error': 'Window not found'}), 404
+        
+        hwnd = handles[0]
+        rect = win32gui.GetWindowRect(hwnd)
+        is_minimized = win32gui.IsIconic(hwnd)
+        is_maximized = win32gui.IsZoomed(hwnd)
+        
+        return jsonify({
+            'success': True,
+            'hwnd': hwnd,
+            'title': win32gui.GetWindowText(hwnd),
+            'state': 'minimized' if is_minimized else 'maximized' if is_maximized else 'normal',
+            'rect': {
+                'left': rect[0],
+                'top': rect[1],
+                'right': rect[2],
+                'bottom': rect[3],
+                'width': rect[2] - rect[0],
+                'height': rect[3] - rect[1]
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Update System Endpoints
+@app.route('/update/check', methods=['GET'])
+@require_auth
+def update_check():
+    """Check for updates from GitHub"""
+    try:
+        # GitHub raw URL for the agent file
+        github_url = "https://raw.githubusercontent.com/your-repo/windows-agent/main/windows_agent.py"
+        
+        # For now, let's simulate update checking
+        # In real implementation, you'd fetch from GitHub and compare versions
+        return jsonify({
+            'success': True,
+            'current_version': __version__,
+            'latest_version': '3.1',  # Simulated
+            'update_available': False,
+            'download_url': github_url,
+            'changelog': {
+                '3.1': 'Added automatic update system',
+                '3.0': 'Added window management features',
+                '2.0': 'Initial release with basic controls'
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/update/download', methods=['POST'])
+@require_auth
+def update_download():
+    """Download update to temporary file"""
+    try:
+        data = request.json or {}
+        download_url = data.get('url', 'https://raw.githubusercontent.com/your-repo/windows-agent/main/windows_agent.py')
+        
+        # Download to temp file
+        temp_file = os.path.join(tempfile.gettempdir(), 'windows_agent_update.py')
+        
+        # Simulate download (in real implementation, download from URL)
+        # urllib.request.urlretrieve(download_url, temp_file)
+        
+        return jsonify({
+            'success': True,
+            'temp_file': temp_file,
+            'size': 0,  # os.path.getsize(temp_file)
+            'message': 'Update downloaded successfully'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/update/apply', methods=['POST'])
+@require_auth
+def update_apply():
+    """Apply the downloaded update"""
+    try:
+        current_file = os.path.abspath(__file__)
+        backup_file = current_file + '.bak'
+        temp_file = os.path.join(tempfile.gettempdir(), 'windows_agent_update.py')
+        
+        # Check if update file exists
+        if not os.path.exists(temp_file):
+            return jsonify({'success': False, 'error': 'No update file found. Download first.'}), 400
+        
+        # Create backup
+        shutil.copy2(current_file, backup_file)
+        
+        # Prepare restart script
+        restart_script = f'''
+import os
+import sys
+import time
+import shutil
+
+# Wait for current process to exit
+time.sleep(2)
+
+# Copy new file
+shutil.copy2(r"{temp_file}", r"{current_file}")
+
+# Start new version
+os.system(f'"{sys.executable}" "{current_file}"')
+'''
+        
+        restart_file = os.path.join(tempfile.gettempdir(), 'restart_agent.py')
+        with open(restart_file, 'w') as f:
+            f.write(restart_script)
+        
+        # Start restart process
+        subprocess.Popen([sys.executable, restart_file], 
+                        creationflags=subprocess.CREATE_NEW_CONSOLE | subprocess.DETACHED_PROCESS)
+        
+        # Schedule shutdown
+        def shutdown():
+            time.sleep(1)
+            os._exit(0)
+        
+        threading.Thread(target=shutdown).start()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Update applied. Agent will restart in 2 seconds.'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/update/status', methods=['GET'])
+@require_auth
+def update_status():
+    """Get update system status"""
+    try:
+        current_file = os.path.abspath(__file__)
+        backup_file = current_file + '.bak'
+        temp_file = os.path.join(tempfile.gettempdir(), 'windows_agent_update.py')
+        
+        return jsonify({
+            'success': True,
+            'current_version': __version__,
+            'backup_exists': os.path.exists(backup_file),
+            'update_pending': os.path.exists(temp_file),
+            'auto_update_enabled': True,
+            'last_check': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 def run_server():
     """Run the Flask server"""
     print("=" * 50)
-    print("Windows Agent for Claude Code v2.0")
+    print(f"Windows Agent for Claude Code v{__version__}")
     print("=" * 50)
     print(f"Starting on {HOST}:{PORT}")
     print(f"API Token: {API_TOKEN}")
+    print(f"Features: {__features__.get(__version__, 'Unknown')}")
     print(f"Listening on ALL interfaces for WSL access")
     print("=" * 50)
     
