@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import base64
+import time
 import requests
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
@@ -131,6 +132,116 @@ class WindowsControl:
         if result.get('success'):
             print(f"Wrote to: {path}")
         return result
+    
+    def list_windows(self) -> List[Dict]:
+        """List all visible windows"""
+        result = self._request("GET", "/window/list")
+        return result.get('windows', [])
+    
+    def focus_window(self, title: Optional[str] = None, pid: Optional[int] = None):
+        """Bring window to foreground"""
+        data = {}
+        if title:
+            data['title'] = title
+        if pid:
+            data['pid'] = pid
+        
+        result = self._request("POST", "/window/focus", json=data)
+        if result.get('success'):
+            print(f"Focused: {result.get('title', 'window')}")
+        return result
+    
+    def maximize_window(self, title: Optional[str] = None, pid: Optional[int] = None):
+        """Maximize window"""
+        data = {}
+        if title:
+            data['title'] = title
+        if pid:
+            data['pid'] = pid
+        
+        result = self._request("POST", "/window/maximize", json=data)
+        if result.get('success'):
+            print(f"Maximized: {result.get('title', 'window')}")
+        return result
+    
+    def minimize_window(self, title: Optional[str] = None, pid: Optional[int] = None):
+        """Minimize window"""
+        data = {}
+        if title:
+            data['title'] = title
+        if pid:
+            data['pid'] = pid
+        
+        result = self._request("POST", "/window/minimize", json=data)
+        if result.get('success'):
+            print(f"Minimized: {result.get('title', 'window')}")
+        return result
+    
+    def restore_window(self, title: Optional[str] = None, pid: Optional[int] = None):
+        """Restore window to normal size"""
+        data = {}
+        if title:
+            data['title'] = title
+        if pid:
+            data['pid'] = pid
+        
+        result = self._request("POST", "/window/restore", json=data)
+        if result.get('success'):
+            print(f"Restored: {result.get('title', 'window')}")
+        return result
+    
+    def window_state(self, title: Optional[str] = None, pid: Optional[int] = None) -> Dict:
+        """Get window state"""
+        data = {}
+        if title:
+            data['title'] = title
+        if pid:
+            data['pid'] = pid
+        
+        result = self._request("POST", "/window/state", json=data)
+        return result
+    
+    def version(self) -> Dict:
+        """Get version information"""
+        result = self._request("GET", "/version")
+        if result.get('success', True):  # Version endpoint doesn't have success field
+            print(f"Windows Agent v{result.get('version', 'Unknown')}")
+            print(f"Features: {result.get('current_features', 'Unknown')}")
+        return result
+    
+    def update_check(self) -> Dict:
+        """Check for updates"""
+        result = self._request("GET", "/update/check")
+        if result.get('success'):
+            current = result.get('current_version')
+            latest = result.get('latest_version')
+            if result.get('update_available'):
+                print(f"Update available: v{current} → v{latest}")
+            else:
+                print(f"Up to date (v{current})")
+        return result
+    
+    def update_download(self, url: Optional[str] = None) -> Dict:
+        """Download update"""
+        data = {}
+        if url:
+            data['url'] = url
+        result = self._request("POST", "/update/download", json=data)
+        if result.get('success'):
+            print("Update downloaded successfully")
+        return result
+    
+    def update_apply(self) -> Dict:
+        """Apply update and restart"""
+        result = self._request("POST", "/update/apply", json={})
+        if result.get('success'):
+            print("Update applied. Agent will restart...")
+        return result
+    
+    def update_status(self) -> Dict:
+        """Get update status"""
+        result = self._request("GET", "/update/status")
+        return result
 
 # CLI Interface
 def main():
@@ -148,6 +259,21 @@ Commands:
   kill <pid>           Kill process by PID
   read <path>          Read file from Windows
   write <path> <text>  Write text to Windows file
+  
+Window Management:
+  windows              List all visible windows
+  focus <title>        Bring window to foreground
+  maximize <title>     Maximize window
+  minimize <title>     Minimize window
+  restore <title>      Restore window to normal size
+  window <title>       Combined: focus and maximize window
+
+Version & Updates:
+  version              Show agent version and features
+  update check         Check for updates
+  update download      Download available update
+  update apply         Apply update and restart agent
+  update status        Show update system status
 
 Examples:
   win screenshot
@@ -155,6 +281,12 @@ Examples:
   win type "Hello World"
   win key enter
   win ps "Get-Date"
+  win windows
+  win focus "Steam"
+  win maximize "Steam"
+  win window "Steam"    # Focus and maximize
+  win version
+  win update check
 """)
         return
     
@@ -227,6 +359,74 @@ Examples:
             path = sys.argv[2]
             content = ' '.join(sys.argv[3:])
             win.write_file(path, content)
+            
+        elif cmd == "windows":
+            windows = win.list_windows()
+            for w in windows[:20]:  # Show first 20
+                state = w['state']
+                print(f"{w['pid']:8} [{state:10}] {w['title']}")
+                
+        elif cmd == "focus":
+            if len(sys.argv) < 3:
+                print("Usage: win focus <title>")
+                return
+            title = ' '.join(sys.argv[2:])
+            win.focus_window(title=title)
+            
+        elif cmd == "maximize":
+            if len(sys.argv) < 3:
+                print("Usage: win maximize <title>")
+                return
+            title = ' '.join(sys.argv[2:])
+            win.maximize_window(title=title)
+            
+        elif cmd == "minimize":
+            if len(sys.argv) < 3:
+                print("Usage: win minimize <title>")
+                return
+            title = ' '.join(sys.argv[2:])
+            win.minimize_window(title=title)
+            
+        elif cmd == "restore":
+            if len(sys.argv) < 3:
+                print("Usage: win restore <title>")
+                return
+            title = ' '.join(sys.argv[2:])
+            win.restore_window(title=title)
+            
+        elif cmd == "window":
+            # Combined focus and maximize
+            if len(sys.argv) < 3:
+                print("Usage: win window <title>")
+                return
+            title = ' '.join(sys.argv[2:])
+            win.focus_window(title=title)
+            time.sleep(0.2)  # Small delay to ensure window is focused
+            win.maximize_window(title=title)
+            
+        elif cmd == "version":
+            win.version()
+            
+        elif cmd == "update":
+            if len(sys.argv) < 3:
+                print("Usage: win update <check|download|apply|status>")
+                return
+            
+            subcmd = sys.argv[2].lower()
+            if subcmd == "check":
+                win.update_check()
+            elif subcmd == "download":
+                win.update_download()
+            elif subcmd == "apply":
+                win.update_apply()
+            elif subcmd == "status":
+                status = win.update_status()
+                if status.get('success', True):
+                    print(f"Version: {status.get('current_version')}")
+                    print(f"Backup exists: {status.get('backup_exists')}")
+                    print(f"Update pending: {status.get('update_pending')}")
+            else:
+                print(f"Unknown update command: {subcmd}")
             
         else:
             print(f"Unknown command: {cmd}")

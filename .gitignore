@@ -6,19 +6,108 @@ __pycache__/
 .Python
 env/
 venv/
-.env
+ENV/
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+showui_env/
+*/bin/
+*/lib/
+*/include/
+*/share/
+pyvenv.cfg
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+
+# ShowUI specific
+# Model files (büyük dosyalar)
+showui_models/
+*.safetensors
+*.bin
+*.pth
+*.onnx
+model_cache/
+huggingface_cache/
+
+# ShowUI runtime files
+showui_*.png
+showui_*.log
+showui_detections.json
+showui_detection_report.md
+
+# Geçici dosyalar
+*.tmp
+temp/
+tmp/
+
+# Organize edilmiş klasörler
+logs/
+screenshots/
+
+# Screenshots ve test dosyaları
+test_*.png
+steam_*.png
+current_*.png
+after_*.png
+before_*.png
+desktop_*.png
+start_menu_*.png
+screenshot_*.png
+*.screenshot.png
+
+# ASCII tool geçici dosyaları
+ascii_screenshot_*.png
+monitor_*.png
+/tmp/
+
+# Windows Agent
+.claude_agent_info
+
+# Log dosyaları
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Config - BUNLARI SAKLA
+# showui_config.json
+# allowed_apps.json
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Agent
-.claude_agent_info
-*.screenshot.png
+# Test çıktıları
+test_results/
+coverage/
+.coverage
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Credentials (güvenlik için)
+*.key
+*.pem
+*.env
+.env.*
+secrets/
 
 # Archives
 *.tar.gz

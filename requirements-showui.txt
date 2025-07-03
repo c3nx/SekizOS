@@ -1,0 +1,24 @@
+# ShowUI Vision Model Requirements
+# Install with: pip install -r requirements-showui.txt
+
+# PyTorch with CUDA support
+# Choose one based on your CUDA version:
+# CUDA 11.8
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+# CUDA 12.1
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+# Core ShowUI dependencies
+transformers>=4.36.0
+accelerate>=0.25.0
+pillow>=10.0.0
+gradio>=4.0.0
+sentencepiece>=0.1.99
+protobuf>=3.20.0
+
+# Optional optimizations
+bitsandbytes>=0.41.0
+optimum>=1.16.0
+
+# For model quantization (optional)
+auto-gptq>=0.5.0

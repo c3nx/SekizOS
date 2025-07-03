@@ -1,0 +1,12 @@
+{
+  "model_path": "showlab/ShowUI-2B",
+  "device": "cuda",
+  "torch_dtype": "bfloat16",
+  "max_workers": 2,
+  "timeout": 30,
+  "cache_dir": "./model_cache",
+  "processor_config": {
+    "min_pixels": 7168,
+    "max_pixels": 1048576
+  }
+}

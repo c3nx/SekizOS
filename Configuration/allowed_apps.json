@@ -1,0 +1,74 @@
+{
+  "steam": {
+    "name": "Steam",
+    "launch_methods": [
+      {"type": "uri", "command": "steam://"},
+      {"type": "path", "command": "C:\\Program Files (x86)\\Steam\\Steam.exe"}
+    ],
+    "pages": {
+      "library": "steam://open/library",
+      "downloads": "steam://open/downloads",
+      "store": "steam://store",
+      "friends": "steam://open/friends"
+    }
+  },
+  "epic": {
+    "name": "Epic Games",
+    "launch_methods": [
+      {"type": "uri", "command": "com.epicgames.launcher://"},
+      {"type": "path", "command": "C:\\Program Files (x86)\\Epic Games\\Launcher\\Portal\\Binaries\\Win64\\EpicGamesLauncher.exe"}
+    ]
+  },
+  "battlenet": {
+    "name": "Battle.net",
+    "launch_methods": [
+      {"type": "path", "command": "C:\\Program Files (x86)\\Battle.net\\Battle.net Launcher.exe"}
+    ]
+  },
+  "discord": {
+    "name": "Discord",
+    "launch_methods": [
+      {"type": "uri", "command": "discord://"},
+      {"type": "path", "command": "%LOCALAPPDATA%\\Discord\\app-*\\Discord.exe"}
+    ]
+  },
+  "spotify": {
+    "name": "Spotify",
+    "launch_methods": [
+      {"type": "uri", "command": "spotify:"},
+      {"type": "path", "command": "%APPDATA%\\Spotify\\Spotify.exe"}
+    ]
+  },
+  "chrome": {
+    "name": "Google Chrome",
+    "launch_methods": [
+      {"type": "path", "command": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"},
+      {"type": "path", "command": "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"}
+    ]
+  },
+  "notepad": {
+    "name": "Notepad",
+    "launch_methods": [
+      {"type": "system", "command": "notepad.exe"}
+    ]
+  },
+  "calculator": {
+    "name": "Calculator",
+    "launch_methods": [
+      {"type": "uri", "command": "ms-calculator:"},
+      {"type": "system", "command": "calc.exe"}
+    ]
+  },
+  "settings": {
+    "name": "Windows Settings",
+    "launch_methods": [
+      {"type": "uri", "command": "ms-settings:"}
+    ]
+  },
+  "store": {
+    "name": "Microsoft Store",
+    "launch_methods": [
+      {"type": "uri", "command": "ms-windows-store:"}
+    ]
+  }
+}
